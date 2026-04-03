@@ -17,8 +17,8 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
   String search = "";
 
   /// SEND WHATSAPP MESSAGE
-  Future<void> sendWhatsApp(String phone, String enrollment, String password) async {
-
+  Future<void> sendWhatsApp(String phone, String enrollment,
+      String password) async {
     String message =
         "Welcome to School\n\nYour account has been approved.\n\nEnrollment Number: $enrollment\nPassword: $password";
 
@@ -32,13 +32,11 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
 
   /// UPDATE STATUS
   void updateStatus(String id, Map<String, dynamic> data, String status) async {
-
     await firestore.collection("students").doc(id).update({
       "status": status
     });
 
     if (status == "accepted") {
-
       String phone = data["phone"] ?? "";
       String enrollment = data["enrollmentNumber"] ?? "";
       String password = data["password"] ?? "";
@@ -53,11 +51,9 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
 
   /// DELETE
   void confirmDelete(String id) {
-
     showDialog(
       context: context,
       builder: (context) {
-
         return AlertDialog(
 
           title: const Text("Delete Student"),
@@ -77,7 +73,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                   backgroundColor: Colors.red),
 
               onPressed: () async {
-
                 await firestore
                     .collection("students")
                     .doc(id)
@@ -101,7 +96,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
 
   /// EDIT STUDENT FULL DETAILS
   void editStudent(String id, Map<String, dynamic> data) {
-
     TextEditingController firstName =
     TextEditingController(text: data["firstName"]);
 
@@ -123,7 +117,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
     showDialog(
       context: context,
       builder: (context) {
-
         return AlertDialog(
 
           title: const Text("Edit Student"),
@@ -180,7 +173,6 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
 
             ElevatedButton(
               onPressed: () async {
-
                 await firestore.collection("students").doc(id).update({
 
                   "firstName": firstName.text,
@@ -209,233 +201,175 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
         title: const Text("Student Management"),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
-
         child: Column(
           children: [
 
             /// SEARCH
             TextField(
-
               decoration: InputDecoration(
                 hintText: "Search students...",
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.grey[200],
                 border: OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-
               onChanged: (value) {
                 setState(() {
                   search = value;
                 });
               },
             ),
-
             const SizedBox(height: 20),
 
             /// STUDENT LIST
             Expanded(
-
               child: StreamBuilder<QuerySnapshot>(
-
-                stream: firestore
-                    .collection("students")
-                    .snapshots(),
-
+                stream: firestore.collection("students").snapshots(),
                 builder: (context, snapshot) {
-
                   if (!snapshot.hasData) {
-                    return const Center(
-                        child:
-                        CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   }
 
-                  var students =
-                  snapshot.data!.docs.where((doc) {
-
-                    var data =
-                    doc.data() as Map<String, dynamic>;
-
+                  var students = snapshot.data!.docs.where((doc) {
+                    var data = doc.data() as Map<String, dynamic>;
                     String name =
                     "${data["firstName"] ?? ""} ${data["lastName"] ?? ""}"
                         .toLowerCase();
-
-                    return name.contains(
-                        search.toLowerCase());
-
+                    return name.contains(search.toLowerCase());
                   }).toList();
 
                   return ListView.builder(
-
                     itemCount: students.length,
-
                     itemBuilder: (context, index) {
-
                       var student = students[index];
-                      var data = student.data()
-                      as Map<String, dynamic>;
-
+                      var data = student.data() as Map<String, dynamic>;
                       String id = student.id;
 
                       return Card(
-
-                        margin:
-                        const EdgeInsets.only(
-                            bottom: 15),
-
+                        margin: const EdgeInsets.only(bottom: 15),
                         child: Padding(
-                          padding:
-                          const EdgeInsets.all(
-                              16),
-
+                          padding: const EdgeInsets.all(16),
                           child: Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
 
-                              Text(
-                                "${data["firstName"]} ${data["lastName"]}",
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight:
-                                    FontWeight
-                                        .bold),
+                              /// STUDENT PHOTO
+                              /// STUDENT PHOTO WITH FULLSCREEN ON TAP
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (data["photoUrl"] != null && data["photoUrl"] != "") {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => Dialog(
+                                          child: InteractiveViewer(
+                                            child: Image.network(
+                                              data["photoUrl"],
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 40,
+                                    backgroundColor: Colors.grey[300],
+                                    backgroundImage: (data["photoUrl"] != null &&
+                                        data["photoUrl"] != "")
+                                        ? NetworkImage(data["photoUrl"])
+                                        : null,
+                                    child: (data["photoUrl"] == null || data["photoUrl"] == "")
+                                        ? const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.white,
+                                    )
+                                        : null,
+                                  ),
+                                ),
                               ),
+                              const SizedBox(height: 10),
 
-                              const SizedBox(
-                                  height: 5),
-
+                              /// STUDENT INFO
                               Text(
-                                  "Class: ${data["class"] ?? ""}"),
-                              Text(
-                                  "Phone: ${data["phone"] ?? ""}"),
-                              Text(
-                                  "Enrollment: ${data["enrollmentNumber"] ?? ""}"),
-
-                              const SizedBox(
-                                  height: 10),
+                                "${data["firstName"] ??
+                                    ""} ${data["lastName"] ?? ""}",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text("Father: ${data["fatherName"] ?? ""}"),
+                              Text("Class: ${data["class"] ?? ""}"),
+                              Text("Phone: ${data["phone"] ?? ""}"),
+                              Text("Enrollment: ${data["enrollmentNumber"] ??
+                                  ""}"),
+                              const SizedBox(height: 10),
 
                               /// STATUS
                               Container(
-
-                                padding:
-                                const EdgeInsets
-                                    .symmetric(
-                                    horizontal:
-                                    10,
-                                    vertical:
-                                    5),
-
-                                decoration:
-                                BoxDecoration(
-                                  color: data[
-                                  "status"] ==
-                                      "accepted"
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: data["status"] == "accepted"
                                       ? Colors.green
-                                      : data["status"] ==
-                                      "rejected"
+                                      : data["status"] == "rejected"
                                       ? Colors.red
                                       : Colors.orange,
-                                  borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                      20),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-
                                 child: Text(
-                                  (data["status"] ??
-                                      "pending")
-                                      .toUpperCase(),
-                                  style:
-                                  const TextStyle(
-                                      color: Colors
-                                          .white),
+                                  (data["status"] ?? "pending").toUpperCase(),
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                               ),
+                              const SizedBox(height: 10),
 
-                              const SizedBox(
-                                  height: 10),
-
+                              /// ACTION BUTTONS
                               Wrap(
                                 spacing: 10,
                                 children: [
-
-                                  if (data["status"] ==
-                                      "pending")
+                                  if (data["status"] == "pending")
                                     ElevatedButton(
-                                      style: ElevatedButton
-                                          .styleFrom(
-                                          backgroundColor:
-                                          Colors
-                                              .green),
-
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green),
                                       onPressed: () {
-                                        updateStatus(
-                                            id,
-                                            data,
-                                            "accepted");
+                                        updateStatus(id, data, "accepted");
                                       },
-
-                                      child: const Text(
-                                          "Accept"),
+                                      child: const Text("Accept"),
                                     ),
-
-                                  if (data["status"] ==
-                                      "pending")
+                                  if (data["status"] == "pending")
                                     ElevatedButton(
-                                      style: ElevatedButton
-                                          .styleFrom(
-                                          backgroundColor:
-                                          Colors
-                                              .orange),
-
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.orange),
                                       onPressed: () {
-                                        updateStatus(
-                                            id,
-                                            data,
-                                            "rejected");
+                                        updateStatus(id, data, "rejected");
                                       },
-
-                                      child: const Text(
-                                          "Reject"),
+                                      child: const Text("Reject"),
                                     ),
-
                                   ElevatedButton(
                                     onPressed: () {
-                                      editStudent(
-                                          id, data);
+                                      editStudent(id, data);
                                     },
-
-                                    child:
-                                    const Text("Edit"),
+                                    child: const Text("Edit"),
                                   ),
-
                                   ElevatedButton(
-                                    style: ElevatedButton
-                                        .styleFrom(
-                                        backgroundColor:
-                                        Colors
-                                            .red),
-
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red),
                                     onPressed: () {
                                       confirmDelete(id);
                                     },
-
-                                    child:
-                                    const Text("Delete"),
+                                    child: const Text("Delete"),
                                   ),
                                 ],
                               )
